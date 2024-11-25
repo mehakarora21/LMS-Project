@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_mysqldb import MySQL
+import datetime
 
 app = Flask(__name__)
 app.secret_key = 'FictionBooks'
@@ -184,6 +185,81 @@ def delete_book(isbn):
         flash(f'Error deleting book: {e}', 'danger')
     
     return redirect(url_for('books'))
+
+
+@app.route('/add-to-issue/<isbn>')
+def add_to_issue(isbn):
+    # Initialize session storage if not present
+    if 'to_be_issued' not in session:
+        session['to_be_issued'] = []
+    
+    # Check if the book is already in the list
+    if isbn not in session['to_be_issued']:
+        session['to_be_issued'].append(isbn)
+        session.modified = True  # Mark session as modified for updates
+        flash(f'Book with ISBN {isbn} added to issue list.', 'success')
+    else:
+        flash(f'Book with ISBN {isbn} is already in the issue list.', 'warning')
+    
+    return redirect(url_for('books'))
+
+@app.route('/remove-from-issue/<isbn>')
+def remove_from_issue(isbn):
+    if 'to_be_issued' in session and isbn in session['to_be_issued']:
+        session['to_be_issued'].remove(isbn)
+        session.modified = True
+        flash(f'Book with ISBN {isbn} removed from issue list.', 'success')
+    else:
+        flash(f'Book with ISBN {isbn} not found in issue list.', 'warning')
+    return redirect(url_for('issue'))
+
+@app.route('/issue-book-form/<isbn>')
+def issue_book_form(isbn):
+    return render_template('issue_form.html', isbn=isbn)
+
+
+@app.route('/issue-book/<isbn>', methods=['POST'])
+def issue_book(isbn):
+    member_id = request.form['member_id']
+    catalog_num = request.form['catalog_num']
+    issue_date = request.form['issue_date']
+    due_date = request.form['due_date']
+
+    try:
+        # Check if member exists
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT COUNT(*) FROM Member WHERE member_ID = %s", (member_id,))
+        member_exists = cur.fetchone()[0]
+
+        if member_exists == 0:
+            flash(f'Member with ID {member_id} does not exist.', 'danger')
+            return redirect(url_for('issue'))
+
+        # Insert into Transactions table
+        cur.execute("""
+            INSERT INTO Transactions (member_ID, isbn, catalog_num, issue_date, due_date)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (member_id, isbn, catalog_num, issue_date, due_date))
+        
+        # Update available copies
+        cur.execute("""
+            UPDATE Books SET available_copies = available_copies - 1 WHERE isbn = %s
+        """, (isbn,))
+        
+        mysql.connection.commit()
+        cur.close()
+
+        # Remove the book from session storage
+        session['to_be_issued'].remove(isbn)
+        session.modified = True
+
+        flash(f'Book with ISBN {isbn} successfully issued to member ID {member_id}!', 'success')
+    except Exception as e:
+        flash(f'Error issuing book: {e}', 'danger')
+
+    return redirect(url_for('issue'))
+
+
 
 
 if __name__ == "__main__":

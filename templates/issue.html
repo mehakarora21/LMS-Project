@@ -1,4 +1,36 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Issue books</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <ul class="flashes">
+            {% for category, message in messages %}
+                <li class="alert alert-{{ category }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+
+<h3>Books to be Issued</h3>
+{% if session.get('to_be_issued') %}
+<table border="1">
+    <tr>
+        <th>ISBN</th>
+        <th>Actions</th>
+    </tr>
+    {% for isbn in session['to_be_issued'] %}
+    <tr>
+        <td>{{ isbn }}</td>
+        <td>
+            <a href="{{ url_for('remove_from_issue', isbn=isbn) }}">Remove</a> |
+            <a href="{{ url_for('issue_book_form', isbn=isbn) }}">Issue</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No books to be issued.</p>
+{% endif %}
+
 {% endblock %}
