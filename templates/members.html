@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Manage Members</h1>
+
+<h2>Add Member</h2>
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul>
+      {% for message in messages %}
+        <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+<!-- Add Member Form -->
+<form action="{{ url_for('add_member') }}" method="POST" style="margin-bottom: 20px;">
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" required>
+    <br>
+    <label for="ph_num">Phone Number:</label>
+    <input type="text" id="ph_num" name="ph_num" required>
+    <br>
+    <label for="membership_date">Membership Date:</label>
+    <input type="date" id="membership_date" name="membership_date" required>
+    <br>
+    <label for="address">Address:</label>
+    <input type="text" id="address" name="address" required>
+    <br>
+    <label for="status">Status:</label>
+    <select id="status" name="status">
+        <option value="active" selected>Active</option>
+        <option value="inactive">Inactive</option>
+    </select>
+    <br>
+    <button type="submit">Add Member</button>
+</form>
+
+<!-- Existing Members Table -->
+<h3>Existing Members</h3>
+<table border="1">
+    <tr>
+        <th>Member ID</th>
+        <th>Name</th>
+        <th>Phone Number</th>
+        <th>Membership Date</th>
+        <th>Address</th>
+        <th>Status</th>
+        <th>Actions</th>
+    </tr>
+    {% for member in members %}
+    <tr>
+        <td>{{ member[0] }}</td>
+        <td>{{ member[1] }}</td>
+        <td>{{ member[2] }}</td>
+        <td>{{ member[3] }}</td>
+        <td>{{ member[4] }}</td>
+        <td>{{ member[5] }}</td>
+        <td>
+            <!-- Edit button -->
+            <a href="{{ url_for('edit_member', member_id=member[0]) }}">Edit</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

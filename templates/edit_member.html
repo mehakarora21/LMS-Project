@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Edit Member</h1>
+
+<form action="{{ url_for('edit_member', member_id=member[0]) }}" method="POST">
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" value="{{ member[1] }}" required>
+    <br>
+    <label for="ph_num">Phone Number:</label>
+    <input type="text" id="ph_num" name="ph_num" value="{{ member[2] }}" required>
+    <br>
+    <label for="membership_date">Membership Date:</label>
+    <input type="date" id="membership_date" name="membership_date" value="{{ member[3].strftime('%Y-%m-%d') }}" required>
+    <br>
+    <label for="address">Address:</label>
+    <input type="text" id="address" name="address" value="{{ member[4] }}" required>
+    <br>
+    <label for="status">Status:</label>
+    <select id="status" name="status">
+        <option value="active" {% if member[5] == 'active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if member[5] == 'inactive' %}selected{% endif %}>Inactive</option>
+    </select>
+    <br>
+    <button type="submit">Update Member</button>
+</form>
+{% endblock %}
