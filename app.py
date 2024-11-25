@@ -29,7 +29,14 @@ def members():
 
 @app.route('/books')
 def books():
-    return render_template('books.html')
+    # Fetch all books from the database
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM Books")
+    books_data = cur.fetchall()
+    cur.close()
+
+    # Render the template with books data
+    return render_template('books.html', books=books_data)
 
 @app.route('/issue')
 def issue():
@@ -99,6 +106,84 @@ def edit_member(member_id):
 
         flash(f"Member '{name}' updated successfully!")
         return redirect(url_for('members'))
+
+
+@app.route('/add-book', methods=['GET', 'POST'])
+def add_book():
+    if request.method == 'POST':
+        isbn = request.form['isbn']
+        title = request.form['title']
+        author = request.form['author']
+        publisher = request.form['publisher']
+        yr_of_publication = request.form['yr_of_publication']
+        genre = request.form['genre']
+        total_copies = request.form['total_copies']
+        available_copies = request.form['available_copies']
+
+        # Insert data into the database
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            INSERT INTO Books (isbn, title, author, publisher, yr_of_publication, genre, total_copies, available_copies)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (isbn, title, author, publisher, yr_of_publication, genre, total_copies, available_copies))
+        mysql.connection.commit()
+        cur.close()
+
+        # Flash message after successful insertion
+        flash('Book added successfully!')
+
+        # Redirect to avoid form resubmission
+        return redirect(url_for('books'))
+    return render_template('books.html')
+
+
+@app.route('/edit-book/<isbn>', methods=['GET', 'POST'])
+def edit_book(isbn):
+    if request.method == 'POST':
+        # Update book details
+        title = request.form['title']
+        author = request.form['author']
+        publisher = request.form['publisher']
+        yr_of_publication = request.form['yr_of_publication']
+        genre = request.form['genre']
+        total_copies = request.form['total_copies']
+        available_copies = request.form['available_copies']
+
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            UPDATE Books 
+            SET title=%s, author=%s, publisher=%s, yr_of_publication=%s, genre=%s, total_copies=%s, available_copies=%s
+            WHERE isbn=%s
+        """, (title, author, publisher, yr_of_publication, genre, total_copies, available_copies, isbn))
+        mysql.connection.commit()
+        cur.close()
+
+        flash('Book details updated successfully!')
+        return redirect(url_for('books'))
+
+    # Fetch current book details
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM Books WHERE isbn=%s", (isbn,))
+    book = cur.fetchone()
+    cur.close()
+
+    return render_template('edit_book.html', book=book)
+
+
+@app.route('/delete-book/<isbn>', methods=['POST', 'GET'])
+def delete_book(isbn):
+    try:
+        # Delete the book from the database
+        cur = mysql.connection.cursor()
+        cur.execute("DELETE FROM Books WHERE isbn=%s", (isbn,))
+        mysql.connection.commit()
+        cur.close()
+
+        flash('Book deleted successfully!', 'success')
+    except Exception as e:
+        flash(f'Error deleting book: {e}', 'danger')
+    
+    return redirect(url_for('books'))
 
 
 if __name__ == "__main__":

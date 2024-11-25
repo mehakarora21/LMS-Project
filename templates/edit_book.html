@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Edit Book</h1>
+
+<form method="POST">
+    <label>ISBN: </label>
+    <input type="text" name="isbn" value="{{ book[0] }}" readonly><br>
+    
+    <label>Title: </label>
+    <input type="text" name="title" value="{{ book[1] }}" required><br>
+    
+    <label>Author: </label>
+    <input type="text" name="author" value="{{ book[2] }}" required><br>
+    
+    <label>Publisher: </label>
+    <input type="text" name="publisher" value="{{ book[3] }}"><br>
+    
+    <label>Year of Publication: </label>
+    <input type="number" name="yr_of_publication" value="{{ book[4] }}"><br>
+    
+    <label>Genre: </label>
+    <input type="text" name="genre" value="{{ book[5] }}"><br>
+    
+    <label>Total Copies: </label>
+    <input type="number" name="total_copies" value="{{ book[6] }}"><br>
+    
+    <label>Available Copies: </label>
+    <input type="number" name="available_copies" value="{{ book[7] }}"><br>
+    
+    <button type="submit">Update</button>
+</form>
+{% endblock %}
