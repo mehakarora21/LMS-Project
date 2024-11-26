@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Return Book</h1>
+<form method="POST">
+    <div class="form-group">
+        <label for="return_date">Return Date</label>
+        <input type="date" class="form-control" id="return_date" name="return_date" required>
+    </div>
+    <button type="submit" class="btn btn-success">Submit</button>
+    <a href="{{ url_for('return_book') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

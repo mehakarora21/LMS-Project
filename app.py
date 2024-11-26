@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_mysqldb import MySQL
-import datetime
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'FictionBooks'
@@ -43,9 +43,34 @@ def books():
 def issue():
     return render_template('issue.html')
 
-@app.route('/return')
+@app.route('/return', methods=['GET', 'POST'])
 def return_book():
-    return render_template('return.html')
+    try:
+        cur = mysql.connection.cursor()
+
+        # Update overdue statuses
+        update_overdue_query = """
+        UPDATE Transactions
+        SET status = 'overdue'
+        WHERE status = 'issued' AND due_date < CURDATE()
+        """
+        cur.execute(update_overdue_query)
+        mysql.connection.commit()
+
+        # Fetch unreturned transactions
+        fetch_unreturned_query = """
+        SELECT member_ID, isbn, catalog_num, issue_date, due_date, status
+        FROM Transactions
+        WHERE status = 'issued' OR status = 'overdue'
+        """
+        cur.execute(fetch_unreturned_query)
+        transactions = cur.fetchall()  # Fetch all records
+
+        return render_template('return.html', transactions=transactions)
+
+    except Exception as e:
+        flash(f"Error fetching unreturned transactions: {e}", "danger")
+        return render_template('return.html', transactions=[])
 
 # Test DB Connection (optional, for troubleshooting)
 @app.route('/test-db')
@@ -259,6 +284,40 @@ def issue_book(isbn):
 
     return redirect(url_for('issue'))
 
+
+# Handle book return
+@app.route('/return_book/<member_id>/<isbn>', methods=['GET', 'POST'])
+def process_return(member_id, isbn):
+    if request.method == 'POST':
+        return_date = request.form.get('return_date')
+        try:
+            cur = mysql.connection.cursor()
+
+            # Update the transaction record
+            update_transaction_query = """
+            UPDATE Transactions
+            SET return_date = %s, status = 'returned'
+            WHERE member_ID = %s AND isbn = %s
+            """
+            cur.execute(update_transaction_query, (return_date, member_id, isbn))
+
+            # Increment available copies in Books table
+            update_books_query = """
+            UPDATE Books
+            SET available_copies = available_copies + 1
+            WHERE isbn = %s
+            """
+            cur.execute(update_books_query, (isbn,))
+            mysql.connection.commit()
+
+            flash(f"Book (ISBN: {isbn}) successfully returned by Member ID: {member_id}.", "success")
+            return redirect(url_for('return_book'))
+        except Exception as e:
+            flash(f"Error processing return: {e}", "danger")
+            return redirect(url_for('return_book'))
+    else:
+        return render_template('return_form.html', member_id=member_id, isbn=isbn)
+    
 
 
 
